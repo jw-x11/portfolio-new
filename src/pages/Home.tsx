@@ -184,7 +184,19 @@ export function Home({ onSection }: HomeProps) {
             <li key={skill}>{skill}</li>
           ))}
         </ul>
-        <a className="scroll-cue" href="#about">
+        <a
+          className="scroll-cue"
+          href="#about"
+          onClick={(event) => {
+            event.preventDefault();
+            const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            gsap.to(window, {
+              duration: reduced ? 0 : 1,
+              ease: "power3.inOut",
+              scrollTo: { y: "#about", offsetY: 72 },
+            });
+          }}
+        >
           cd about
           <span className="scroll-cue-line" aria-hidden="true" />
         </a>

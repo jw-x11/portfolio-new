@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LiquidGlass } from "@ybouane/liquidglass";
 import { ThemeToggle } from "./ThemeToggle";
 import { site } from "../content/site";
 import { gsap } from "../lib/gsap";
@@ -17,15 +18,115 @@ type NavProps = {
 export function Nav({ activeSection }: NavProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [scrolled, setScrolled] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const glassRef = useRef<InstanceType<typeof LiquidGlass> | null>(null);
   const onHome = location.pathname === "/";
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const root = document.getElementById("root");
+    const glass = navRef.current;
+    if (!root || !glass) return;
+
+    const writeConfig = () => {
+      const radius = Math.max(24, Math.round(glass.offsetHeight / 2));
+      glass.dataset.config = JSON.stringify({
+        cornerRadius: radius,
+        zRadius: 10,
+        blurAmount: 0.1,
+        refraction: 0.5,
+        chromAberration: 0.1,
+        edgeHighlight: 0.2,
+        fresnel: 1,
+        specular: 0.05,
+        shadowOpacity: 0.14,
+        shadowSpread: 14,
+        shadowOffsetY: 8,
+        tintStrength: 0.03,
+        floating: false,
+      });
+    };
+
+    let cancelled = false;
+    let token = 0;
+    let resizeTimer = 0;
+
+    const boot = () => {
+      const current = ++token;
+      writeConfig();
+      LiquidGlass.init({ root, glassElements: [glass] })
+        .then((instance) => {
+          if (cancelled || current !== token) {
+            instance.destroy();
+            return;
+          }
+          glassRef.current = instance;
+          glass.classList.add("is-liquid");
+          glass.classList.remove("is-resizing");
+          root.style.userSelect = "";
+          root.style.webkitUserSelect = "";
+        })
+        .catch((error: unknown) => {
+          if (cancelled || current !== token) return;
+          glass.classList.remove("is-resizing");
+          console.warn("Liquid glass nav failed to start.", error);
+        });
+    };
+
+    const onResize = () => {
+      glass.classList.add("is-resizing");
+      glass.classList.remove("is-liquid");
+      token += 1;
+      glassRef.current?.destroy();
+      glassRef.current = null;
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        if (!cancelled) boot();
+      }, 180);
+    };
+
+    const refresh = () => glassRef.current?.markChanged();
+    const recaptureTheme = () => {
+      const instance = glassRef.current;
+      if (!instance) return;
+      for (const child of instance.root.children) {
+        if (!(child instanceof HTMLElement) || instance.glassSet.has(child)) continue;
+        void instance.capture.captureElement(child, true);
+      }
+    };
+
+    window.addEventListener("scroll", refresh, { passive: true });
+    window.addEventListener("resize", onResize);
+    const themeObserver = new MutationObserver(recaptureTheme);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    const overlay = document.querySelector(".page-overlay");
+    const overlayObserver = new MutationObserver(refresh);
+    if (overlay) {
+      overlayObserver.observe(overlay, { attributes: true, attributeFilter: ["class", "style"] });
+    }
+
+    boot();
+
+    return () => {
+      cancelled = true;
+      token += 1;
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("scroll", refresh);
+      window.removeEventListener("resize", onResize);
+      themeObserver.disconnect();
+      overlayObserver.disconnect();
+      glass.classList.remove("is-liquid");
+      glassRef.current?.destroy();
+      glassRef.current = null;
+    };
   }, []);
+
+  useEffect(() => {
+    const refresh = window.setTimeout(() => glassRef.current?.markChanged(), 1000);
+    return () => window.clearTimeout(refresh);
+  }, [location.pathname]);
 
   const goToSection = (id: string) => {
     if (!onHome) {
@@ -40,7 +141,7 @@ export function Nav({ activeSection }: NavProps) {
   };
 
   return (
-    <header className={`nav${scrolled ? " is-scrolled" : ""}`}>
+    <header className="nav" ref={navRef}>
       <div className="nav-inner">
         <Link className="nav-mark" to="/" aria-label="Home">
           {site.firstName} <span>{site.lastName}</span>

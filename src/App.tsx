@@ -36,6 +36,11 @@ export default function App() {
 
   return (
     <>
+      <div className="site-bg" aria-hidden="true">
+        <div className="site-bg-wash" />
+        <div className="site-bg-frost" />
+        <div className="site-bg-dots" />
+      </div>
       <div className="progress" aria-hidden="true" />
       <Cursor />
       <Nav activeSection={activeSection} />
