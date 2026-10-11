@@ -34,7 +34,7 @@ export function Nav({ activeSection }: NavProps) {
         zRadius: 10,
         blurAmount: 0.1,
         refraction: 0.5,
-        chromAberration: 0.1,
+        chromAberration: 0.15,
         edgeHighlight: 0.2,
         fresnel: 1,
         specular: 0.05,

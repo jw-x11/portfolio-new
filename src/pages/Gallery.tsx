@@ -6,8 +6,11 @@ import { gsap } from "../lib/gsap";
 export function Gallery() {
   const rootRef = useRef<HTMLDivElement>(null);
   const lightboxRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const direction = useRef(1);
   const [photos, setPhotos] = useState<Photo[] | null>(null);
   const [active, setActive] = useState<number | null>(null);
+  const [outgoing, setOutgoing] = useState<Photo | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,34 +54,61 @@ export function Gallery() {
   }, [photos]);
 
   useLayoutEffect(() => {
-    if (active === null || !lightboxRef.current) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        lightboxRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.28, ease: "power2.out" },
-      );
-      gsap.fromTo(
-        ".lightbox img",
-        { scale: 0.96, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.4, ease: "power3.out" },
-      );
-    }, lightboxRef);
-    return () => ctx.revert();
-  }, [active]);
+    const shell = lightboxRef.current;
+    if (active === null || !shell) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+    gsap.fromTo(shell, { opacity: 0 }, { opacity: 1, duration: 0.28, ease: "power2.out" });
+  }, [active === null]);
+
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    if (!outgoing || !stage) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const [leaving, entering] = stage.querySelectorAll("img");
+    if (!leaving || !entering) return;
+    if (reduced) {
+      setOutgoing(null);
+      return;
+    }
+
+    const shift = 28 * direction.current;
+    gsap.set(leaving, { opacity: 1, x: 0 });
+    gsap.set(entering, { opacity: 0, x: shift });
+    const tween = gsap.timeline({
+      onComplete: () => setOutgoing(null),
+    });
+    tween.to(leaving, { opacity: 0, x: -shift, duration: 0.28, ease: "power2.inOut" }, 0);
+    tween.to(entering, { opacity: 1, x: 0, duration: 0.28, ease: "power2.inOut" }, 0);
+    return () => {
+      tween.kill();
+    };
+  }, [outgoing]);
 
   useEffect(() => {
     if (active === null) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setActive(null);
-      if (event.key === "ArrowRight" && photos) setActive((i) => ((i ?? 0) + 1) % photos.length);
-      if (event.key === "ArrowLeft" && photos) setActive((i) => ((i ?? 0) - 1 + photos.length) % photos.length);
+      if (event.key === "ArrowRight" && photos && active !== null) showPhoto((active + 1) % photos.length);
+      if (event.key === "ArrowLeft" && photos && active !== null) showPhoto((active - 1 + photos.length) % photos.length);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [active, photos]);
 
   const current = active !== null && photos ? photos[active] : null;
+
+  const showPhoto = (index: number) => {
+    if (!photos || active === null) {
+      setActive(index);
+      return;
+    }
+    const forward = (index - active + photos.length) % photos.length;
+    const backward = (active - index + photos.length) % photos.length;
+    direction.current = forward <= backward ? 1 : -1;
+    setOutgoing(photos[active]);
+    setActive(index);
+  };
 
   return (
     <div className="gallery-page" ref={rootRef}>
@@ -105,7 +135,7 @@ export function Gallery() {
               className="gallery-item"
               type="button"
               key={photo.id}
-              onClick={() => setActive(index)}
+              onClick={() => showPhoto(index)}
               aria-label={`Open ${photo.alt}`}
             >
               <img src={photo.thumb} alt={photo.alt} width={photo.width} height={photo.height} loading="lazy" />
@@ -125,7 +155,10 @@ export function Gallery() {
             aria-label={current.alt}
             onClick={() => setActive(null)}
           >
-            <img src={current.src} alt={current.alt} onClick={(event) => event.stopPropagation()} />
+            <div className="lightbox-stage" ref={stageRef} onClick={(event) => event.stopPropagation()}>
+              {outgoing && <img src={outgoing.src} alt="" />}
+              <img src={current.src} alt={current.alt} />
+            </div>
             <p className="lightbox-caption">
               {current.alt} · {active! + 1} / {photos.length}
             </p>
@@ -139,7 +172,7 @@ export function Gallery() {
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
-                setActive((i) => ((i ?? 0) - 1 + photos.length) % photos.length);
+                showPhoto((active! - 1 + photos.length) % photos.length);
               }}
             >
               Prev
@@ -149,7 +182,7 @@ export function Gallery() {
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
-                setActive((i) => ((i ?? 0) + 1) % photos.length);
+                showPhoto((active! + 1) % photos.length);
               }}
             >
               Next
