@@ -47,6 +47,23 @@ export function Nav({ activeSection }: NavProps) {
         </Link>
         <div className="nav-end">
           <nav className="nav-links" aria-label="Primary">
+            <button
+              type="button"
+              className={onHome && activeSection === "home" ? "is-active" : ""}
+              onClick={() => {
+                if (!onHome) {
+                  navigate("/");
+                  return;
+                }
+                gsap.to(window, {
+                  duration: 0.8,
+                  ease: "power3.inOut",
+                  scrollTo: { y: 0 },
+                });
+              }}
+            >
+              Home
+            </button>
             {homeLinks.map((link) => (
               <button
                 key={link.id}

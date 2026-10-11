@@ -1,19 +1,70 @@
 import { useLayoutEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { CharReveal } from "../components/CharReveal";
 import { site } from "../content/site";
-import { gsap } from "../lib/gsap";
+import { gsap, ScrollTrigger } from "../lib/gsap";
 
-export function Home() {
+const sectionIds = ["about", "work", "contact", "social"] as const;
+
+type HomeProps = {
+  onSection?: (id: string) => void;
+};
+
+export function Home({ onSection }: HomeProps) {
+  const location = useLocation();
   const rootRef = useRef<HTMLDivElement>(null);
+  const onSectionRef = useRef(onSection);
+  onSectionRef.current = onSection;
+
+  useLayoutEffect(() => {
+    if (!location.hash) return;
+    const target = document.getElementById(location.hash.slice(1));
+    if (!target) return;
+
+    const covered = document.querySelector(".page-overlay.is-on");
+    if (covered) {
+      const top = target.getBoundingClientRect().top + window.scrollY - 72;
+      window.scrollTo(0, Math.max(0, top));
+      ScrollTrigger.refresh();
+      return;
+    }
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    gsap.to(window, {
+      duration: reduced ? 0 : 0.9,
+      ease: "power3.inOut",
+      scrollTo: { y: target, offsetY: 72 },
+    });
+  }, [location.hash]);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
 
     const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: ".landing",
+        start: "top 45%",
+        end: "bottom 45%",
+        onToggle: (self) => {
+          if (self.isActive) onSectionRef.current?.("home");
+        },
+      });
+
+      sectionIds.forEach((id) => {
+        ScrollTrigger.create({
+          trigger: `#${id}`,
+          start: "top 45%",
+          end: "bottom 45%",
+          onToggle: (self) => {
+            if (self.isActive) onSectionRef.current?.(id);
+          },
+        });
+      });
+
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduced) return;
+      const covered = document.querySelector(".page-overlay.is-on");
+      if (reduced || covered) return;
 
       const heroChars = root.querySelectorAll(".landing .char");
       gsap.from(heroChars, {

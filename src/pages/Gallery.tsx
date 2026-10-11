@@ -26,7 +26,8 @@ export function Gallery() {
 
     const ctx = gsap.context(() => {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduced) return;
+      const covered = document.querySelector(".page-overlay.is-on");
+      if (reduced || covered) return;
 
       gsap.from(".gallery-header > *", {
         y: 24,
