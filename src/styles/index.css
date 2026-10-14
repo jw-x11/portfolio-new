@@ -353,6 +353,55 @@ button {
   font-weight: 500;
 }
 
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 115;
+}
+
+.intro-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: calc(50% + 1px);
+  background: var(--bg);
+  will-change: transform;
+}
+
+.intro-panel.top {
+  top: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.intro-panel.bottom {
+  bottom: 0;
+}
+
+.intro-mark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-bottom: 1.5rem;
+}
+
+.intro-edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--aqua);
+}
+
+.intro-panel.top .intro-edge {
+  bottom: 0;
+}
+
+.intro-panel.bottom .intro-edge {
+  top: 0;
+}
+
 .section {
   width: var(--page);
   margin: 0 auto;

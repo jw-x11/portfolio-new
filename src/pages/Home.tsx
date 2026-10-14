@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { CharReveal } from "../components/CharReveal";
 import { site } from "../content/site";
 import { gsap, ScrollTrigger } from "../lib/gsap";
+import { onIntroReveal } from "../lib/intro";
 
 const sectionIds = ["about", "work", "contact", "social"] as const;
 
@@ -41,6 +42,7 @@ export function Home({ onSection }: HomeProps) {
     const root = rootRef.current;
     if (!root) return;
 
+    let stopWaiting = () => {};
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
         trigger: ".landing",
@@ -66,60 +68,67 @@ export function Home({ onSection }: HomeProps) {
       const covered = document.querySelector(".page-overlay.is-on");
       if (reduced || covered) return;
 
-      const heroChars = root.querySelectorAll(".landing .char");
-      gsap.from(heroChars, {
-        yPercent: 115,
-        rotate: 6,
-        duration: 1.15,
-        stagger: 0.035,
-        ease: "power4.out",
-        delay: 0.15,
-      });
+      // Hold the hero in its final state behind the intro cover (so the glass
+      // nav snapshots it), then play its entrance as the cover opens.
+      stopWaiting = onIntroReveal((lead) => {
+        ctx.add(() => {
+          const heroChars = root.querySelectorAll(".landing .char");
+          gsap.from(heroChars, {
+            yPercent: 115,
+            rotate: 6,
+            duration: 1.15,
+            stagger: 0.035,
+            ease: "power4.out",
+            delay: lead + 0.15,
+          });
 
-      gsap.from(".landing-eyebrow", {
-        opacity: 0,
-        y: 12,
-        duration: 0.7,
-        ease: "power2.out",
-      });
+          gsap.from(".landing-eyebrow", {
+            opacity: 0,
+            delay: lead,
+            y: 12,
+            duration: 0.7,
+            ease: "power2.out",
+          });
 
-      gsap.from(".hero-rule", {
-        scaleX: 0,
-        duration: 0.9,
-        delay: 0.55,
-        ease: "power2.inOut",
-      });
+          gsap.from(".hero-rule", {
+            scaleX: 0,
+            duration: 0.9,
+            delay: lead + 0.55,
+            ease: "power2.inOut",
+          });
 
-      gsap.from(".hero-meta p", {
-        opacity: 0,
-        x: -16,
-        duration: 0.8,
-        delay: 0.7,
-        ease: "power2.out",
-      });
+          gsap.from(".hero-meta p", {
+            opacity: 0,
+            x: -16,
+            duration: 0.8,
+            delay: lead + 0.7,
+            ease: "power2.out",
+          });
 
-      gsap.from(".hero-stack li", {
-        opacity: 0,
-        y: 10,
-        duration: 0.5,
-        stagger: 0.06,
-        delay: 0.85,
-        ease: "power2.out",
-      });
+          gsap.from(".hero-stack li", {
+            opacity: 0,
+            y: 10,
+            duration: 0.5,
+            stagger: 0.06,
+            delay: lead + 0.85,
+            ease: "power2.out",
+          });
 
-      gsap.fromTo(
-        ".scroll-cue-line",
-        { scaleY: 0 },
-        {
-          scaleY: 1,
-          duration: 1.1,
-          delay: 1,
-          ease: "power2.out",
-          repeat: -1,
-          yoyo: true,
-          repeatDelay: 0.4,
-        },
-      );
+          gsap.fromTo(
+            ".scroll-cue-line",
+            { scaleY: 0 },
+            {
+              scaleY: 1,
+              duration: 1.1,
+              delay: lead + 1,
+              ease: "power2.out",
+              repeat: -1,
+              yoyo: true,
+              repeatDelay: 0.4,
+            },
+          );
+        });
+      });
 
       gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => {
         gsap.from(el, {
@@ -162,7 +171,10 @@ export function Home({ onSection }: HomeProps) {
       });
     }, root);
 
-    return () => ctx.revert();
+    return () => {
+      stopWaiting();
+      ctx.revert();
+    };
   }, []);
 
   return (

@@ -4,6 +4,7 @@ import { LiquidGlass } from "@ybouane/liquidglass";
 import { ThemeToggle } from "./ThemeToggle";
 import { site } from "../content/site";
 import { gsap } from "../lib/gsap";
+import { markGlassReady } from "../lib/intro";
 
 const homeLinks = [
   { id: "about", label: "About" },
@@ -71,10 +72,12 @@ export function Nav({ activeSection }: NavProps) {
           glass.classList.remove("is-resizing");
           root.style.userSelect = "";
           root.style.webkitUserSelect = "";
+          markGlassReady();
         })
         .catch((error: unknown) => {
           if (cancelled || current !== token) return;
           glass.classList.remove("is-resizing");
+          markGlassReady();
           console.warn("Liquid glass nav failed to start.", error);
         });
     };

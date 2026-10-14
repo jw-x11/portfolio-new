@@ -2,6 +2,7 @@ import { useLayoutEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import { Cursor } from "./components/Cursor";
 import { Footer } from "./components/Footer";
+import { Intro } from "./components/Intro";
 import { Nav } from "./components/Nav";
 import { PageTransition } from "./components/PageTransition";
 import { ToTop } from "./components/ToTop";
@@ -43,6 +44,7 @@ export default function App() {
       </div>
       <div className="progress" aria-hidden="true" />
       <Cursor />
+      <Intro />
       <Nav activeSection={activeSection} />
       <ToTop />
       <PageTransition>

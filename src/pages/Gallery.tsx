@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { loadPhotos, type Photo } from "../lib/photos";
 import { gsap } from "../lib/gsap";
+import { onIntroReveal } from "../lib/intro";
 
 export function Gallery() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -27,30 +28,39 @@ export function Gallery() {
     const root = rootRef.current;
     if (!root) return;
 
+    let stopWaiting = () => {};
     const ctx = gsap.context(() => {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const covered = document.querySelector(".page-overlay.is-on");
       if (reduced || covered) return;
 
-      gsap.from(".gallery-header > *", {
-        y: 24,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.1,
-        ease: "power3.out",
-      });
+      stopWaiting = onIntroReveal((lead) => {
+        ctx.add(() => {
+          gsap.from(".gallery-header > *", {
+            y: 24,
+            opacity: 0,
+            delay: lead,
+            duration: 0.7,
+            stagger: 0.1,
+            ease: "power3.out",
+          });
 
-      gsap.from(".gallery-item", {
-        y: 30,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.06,
-        ease: "power2.out",
-        delay: 0.15,
+          gsap.from(".gallery-item", {
+            y: 30,
+            opacity: 0,
+            duration: 0.7,
+            stagger: 0.06,
+            ease: "power2.out",
+            delay: lead + 0.15,
+          });
+        });
       });
     }, root);
 
-    return () => ctx.revert();
+    return () => {
+      stopWaiting();
+      ctx.revert();
+    };
   }, [photos]);
 
   useLayoutEffect(() => {
