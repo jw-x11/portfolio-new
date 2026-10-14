@@ -11,6 +11,8 @@ const homeLinks = [
   { id: "contact", label: "Contact" },
 ] as const;
 
+const CAPTURE_CLASS = "is-glass-capture";
+
 type NavProps = {
   activeSection: string;
 };
@@ -53,7 +55,12 @@ export function Nav({ activeSection }: NavProps) {
     const boot = () => {
       const current = ++token;
       writeConfig();
+      // Show every animated element in its final state while the library
+      // takes its one-time snapshot (init awaits the capture), then hide again.
+      const html = document.documentElement;
+      html.classList.add(CAPTURE_CLASS);
       LiquidGlass.init({ root, glassElements: [glass] })
+        .finally(() => html.classList.remove(CAPTURE_CLASS))
         .then((instance) => {
           if (cancelled || current !== token) {
             instance.destroy();
@@ -85,18 +92,10 @@ export function Nav({ activeSection }: NavProps) {
     };
 
     const refresh = () => glassRef.current?.markChanged();
-    const recaptureTheme = () => {
-      const instance = glassRef.current;
-      if (!instance) return;
-      for (const child of instance.root.children) {
-        if (!(child instanceof HTMLElement) || instance.glassSet.has(child)) continue;
-        void instance.capture.captureElement(child, true);
-      }
-    };
-
     window.addEventListener("scroll", refresh, { passive: true });
     window.addEventListener("resize", onResize);
-    const themeObserver = new MutationObserver(recaptureTheme);
+    // A theme switch restarts the glass: same show, capture, hide pass as boot.
+    const themeObserver = new MutationObserver(onResize);
     themeObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-theme"],
@@ -113,6 +112,7 @@ export function Nav({ activeSection }: NavProps) {
       cancelled = true;
       token += 1;
       window.clearTimeout(resizeTimer);
+      document.documentElement.classList.remove(CAPTURE_CLASS);
       window.removeEventListener("scroll", refresh);
       window.removeEventListener("resize", onResize);
       themeObserver.disconnect();

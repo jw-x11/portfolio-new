@@ -1037,3 +1037,25 @@ button {
     display: none;
   }
 }
+
+/* Applied only while the liquid glass takes its snapshot: show the
+   GSAP-hidden reveal targets in their final state. */
+.is-glass-capture .landing .char,
+.is-glass-capture .landing-eyebrow,
+.is-glass-capture .hero-rule,
+.is-glass-capture .hero-meta p,
+.is-glass-capture .hero-stack li,
+.is-glass-capture .scroll-cue-line,
+.is-glass-capture .reveal,
+.is-glass-capture .project,
+.is-glass-capture .social-list li {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Snapshot the settled colours, not a mid-transition frame. */
+.is-glass-capture *,
+.is-glass-capture *::before,
+.is-glass-capture *::after {
+  transition: none !important;
+}
