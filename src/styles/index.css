@@ -402,6 +402,42 @@ button {
   top: 0;
 }
 
+/* Theme-switch curtain: painted in the theme being switched to, which is not
+   active yet, so these mirror the --bg / --aqua values at the top. */
+.intro.to-light {
+  --curtain-bg: #f4fbfb;
+  --curtain-edge: #14b8c6;
+}
+
+.intro.to-dark {
+  --curtain-bg: #0b1418;
+  --curtain-edge: #2ad4de;
+}
+
+/* The same aqua wash as .site-bg-wash, at the strength it shows through
+   .site-bg-frost, sized to the whole viewport and split across both panels. */
+.intro.to-light .intro-panel,
+.intro.to-dark .intro-panel {
+  background-color: var(--curtain-bg);
+  background-image:
+    radial-gradient(ellipse 55% 42% at 12% 0%, color-mix(in srgb, var(--curtain-edge) 14%, transparent), transparent 68%),
+    radial-gradient(ellipse 42% 36% at 92% 100%, color-mix(in srgb, var(--curtain-edge) 9%, transparent), transparent 70%);
+  background-size: 100% 100vh;
+  background-repeat: no-repeat;
+}
+
+/* Start the bottom panel's wash at the viewport top so it continues the top
+   panel's across the seam. */
+.intro.to-light .intro-panel.bottom,
+.intro.to-dark .intro-panel.bottom {
+  background-position: 0 calc(1px - 50vh);
+}
+
+.intro.to-light .intro-edge,
+.intro.to-dark .intro-edge {
+  background: var(--curtain-edge);
+}
+
 .section {
   width: var(--page);
   margin: 0 auto;
@@ -433,7 +469,7 @@ button {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 8rem 0 4.5rem;
+  padding: 8rem 0 8rem;
   width: var(--page);
   margin: 0 auto;
 }

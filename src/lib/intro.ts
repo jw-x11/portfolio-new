@@ -7,6 +7,7 @@ let waiting: RevealListener[] | null = null;
 
 let glassReady = false;
 const glassListeners = new Set<Listener>();
+const nextCaptureListeners = new Set<Listener>();
 
 function subscribe<T>(list: T[], fn: T) {
   list.push(fn);
@@ -43,8 +44,18 @@ export function onIntroReveal(fn: RevealListener) {
 /** Called by the nav once the liquid glass has taken its first snapshot. */
 export function markGlassReady() {
   glassReady = true;
-  glassListeners.forEach((fn) => fn());
+  const listeners = [...glassListeners, ...nextCaptureListeners];
   glassListeners.clear();
+  nextCaptureListeners.clear();
+  listeners.forEach((fn) => fn());
+}
+
+/** Runs `fn` when the glass next finishes a snapshot (e.g. after a theme switch). */
+export function whenNextGlassCapture(fn: Listener) {
+  nextCaptureListeners.add(fn);
+  return () => {
+    nextCaptureListeners.delete(fn);
+  };
 }
 
 export function whenGlassReady(fn: Listener) {

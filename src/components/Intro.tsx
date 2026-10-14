@@ -3,8 +3,7 @@ import { createPortal } from "react-dom";
 import { site } from "../content/site";
 import { gsap } from "../lib/gsap";
 import { beginIntro, revealIntro, whenGlassReady } from "../lib/intro";
-
-const scrollKeys = new Set([" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"]);
+import { lockScroll } from "../lib/scrollLock";
 
 /** The cover stays at least this long, even when the glass is ready sooner. */
 const MIN_HOLD = 500;
@@ -26,21 +25,7 @@ export function Intro() {
 
     beginIntro();
 
-    // Block scrolling with listeners rather than overflow: hidden. Hiding the
-    // scrollbar changes the page width, which makes the liquid glass re-snapshot
-    // the page after its capture pass, while the hero is still GSAP-hidden.
-    const blockScroll = (event: Event) => event.preventDefault();
-    const blockKeys = (event: KeyboardEvent) => {
-      if (scrollKeys.has(event.key)) event.preventDefault();
-    };
-    window.addEventListener("wheel", blockScroll, { passive: false });
-    window.addEventListener("touchmove", blockScroll, { passive: false });
-    window.addEventListener("keydown", blockKeys);
-    const unlock = () => {
-      window.removeEventListener("wheel", blockScroll);
-      window.removeEventListener("touchmove", blockScroll);
-      window.removeEventListener("keydown", blockKeys);
-    };
+    const unlock = lockScroll();
 
     const ctx = gsap.context(() => {}, root);
     let opened = false;

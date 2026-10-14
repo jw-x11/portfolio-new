@@ -12,9 +12,3 @@ export function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(KEY, theme);
 }
-
-export function toggleTheme(current: Theme): Theme {
-  const next = current === "dark" ? "light" : "dark";
-  applyTheme(next);
-  return next;
-}
