@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { CharReveal } from "../components/CharReveal";
+import { TiltImage } from "../components/TiltImage";
 import { site } from "../content/site";
 import { gsap, ScrollTrigger } from "../lib/gsap";
 import { onIntroReveal } from "../lib/intro";
@@ -249,19 +250,28 @@ export function Home({ onSection }: HomeProps) {
               <div>
                 <h3>{project.title}</h3>
                 <p>{project.description}</p>
+                {project.image ? (
+                  <TiltImage src={project.image} alt={`${project.title} screenshot`} />
+                ) : null}
                 <div className="project-tags">
                   {project.tags.map((tag) => (
                     <span key={tag}>{tag}</span>
                   ))}
                 </div>
               </div>
-              {project.href ? (
-                <Link className="project-link" to={project.href}>
-                  View →
-                </Link>
-              ) : (
-                <span className="project-link">Soon</span>
-              )}
+              <div className="project-links">
+                {project.repo ? (
+                  <a className="project-link" href={project.repo} target="_blank" rel="noreferrer">
+                    Repo <span className="project-arrow">→</span>
+                  </a>
+                ) : null}
+                {project.href ? (
+                  <a className="project-link" href={project.href} target="_blank" rel="noreferrer">
+                    Demo <span className="project-arrow">→</span>
+                  </a>
+                ) : null}
+                {!project.repo && !project.href ? <span className="project-link">Soon</span> : null}
+              </div>
             </li>
           ))}
         </ul>

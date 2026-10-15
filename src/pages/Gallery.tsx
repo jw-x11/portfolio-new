@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { loadPhotos, type Photo } from "../lib/photos";
 import { gsap } from "../lib/gsap";
 import { onIntroReveal } from "../lib/intro";
+import { TiltImage } from "../components/TiltImage";
 
 export function Gallery() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -125,8 +126,9 @@ export function Gallery() {
       <header className="gallery-header">
         <h1>Photos</h1>
         <p>
-          A hobby, kept off the main thread. Images from <code>orig-photo</code>, resized on
-          build.
+          <a className="project-link" href="https://junxiwuphoto.mypixieset.com/" target="_blank" rel="noreferrer">
+            View my full photo portfolio <span className="project-arrow">→</span>
+          </a>
         </p>
       </header>
 
@@ -148,7 +150,14 @@ export function Gallery() {
               onClick={() => showPhoto(index)}
               aria-label={`Open ${photo.alt}`}
             >
-              <img src={photo.thumb} alt={photo.alt} width={photo.width} height={photo.height} loading="lazy" />
+              <TiltImage
+                className="tilt tilt-fill"
+                imgClassName="gallery-img"
+                src={photo.thumb}
+                alt={photo.alt}
+                width={photo.width}
+                height={photo.height}
+              />
             </button>
           ))}
         </div>

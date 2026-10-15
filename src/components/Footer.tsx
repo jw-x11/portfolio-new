@@ -6,7 +6,7 @@ export function Footer() {
       <span>
         © {new Date().getFullYear()} {site.firstName} {site.lastName}
       </span>
-      <span>Software engineer</span>
+      <span>{site.role}</span>
     </footer>
   );
 }
