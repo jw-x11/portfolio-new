@@ -1,3 +1,13 @@
+type Project = {
+  year: string;
+  title: string;
+  description: string;
+  tags: readonly string[];
+  href: string;
+  repo: string;
+  image: string;
+};
+
 /** Edit this file to update name, copy, projects, and social links. */
 export const site = {
   firstName: "Junxi",
@@ -57,7 +67,7 @@ export const site = {
       repo: "https://github.com/Da-Dog/ttsf-2022",
       image: "/assets/savetheland demo.png",
     },
-  ],
+  ] as readonly Project[],
   contactNote: "Reach out about software projects, collaboration, or opportunities.",
   social: [
     { name: "GitHub", href: "https://github.com/jw-x11" },

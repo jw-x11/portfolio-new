@@ -1,3 +1,5 @@
+import { pauseSmoothScroll, resumeSmoothScroll } from "./smoothScroll";
+
 const scrollKeys = new Set([" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"]);
 
 /**
@@ -6,6 +8,7 @@ const scrollKeys = new Set([" ", "PageUp", "PageDown", "Home", "End", "ArrowUp",
  * the page at the wrong moment. Returns the unlock function.
  */
 export function lockScroll() {
+  pauseSmoothScroll();
   const blockScroll = (event: Event) => event.preventDefault();
   const blockKeys = (event: KeyboardEvent) => {
     if (scrollKeys.has(event.key)) event.preventDefault();
@@ -14,6 +17,7 @@ export function lockScroll() {
   window.addEventListener("touchmove", blockScroll, { passive: false });
   window.addEventListener("keydown", blockKeys);
   return () => {
+    resumeSmoothScroll();
     window.removeEventListener("wheel", blockScroll);
     window.removeEventListener("touchmove", blockScroll);
     window.removeEventListener("keydown", blockKeys);

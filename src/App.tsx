@@ -4,9 +4,11 @@ import { Cursor } from "./components/Cursor";
 import { Footer } from "./components/Footer";
 import { Intro } from "./components/Intro";
 import { Nav } from "./components/Nav";
+import { ScrollRuler } from "./components/ScrollRuler";
 import { PageTransition } from "./components/PageTransition";
 import { ToTop } from "./components/ToTop";
 import { gsap, registerGsap } from "./lib/gsap";
+import { initSmoothScroll } from "./lib/smoothScroll";
 import { Gallery } from "./pages/Gallery";
 import { Home } from "./pages/Home";
 
@@ -15,8 +17,9 @@ export default function App() {
 
   useLayoutEffect(() => {
     registerGsap();
+    const stopSmooth = initSmoothScroll();
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
+    if (reduced) return stopSmooth;
 
     const tween = gsap.to(".progress", {
       scaleX: 1,
@@ -30,6 +33,7 @@ export default function App() {
     });
 
     return () => {
+      stopSmooth();
       tween.scrollTrigger?.kill();
       tween.kill();
     };
@@ -46,6 +50,7 @@ export default function App() {
       <Cursor />
       <Intro />
       <Nav activeSection={activeSection} />
+      <ScrollRuler activeSection={activeSection} />
       <ToTop />
       <PageTransition>
         {(frozen) => (

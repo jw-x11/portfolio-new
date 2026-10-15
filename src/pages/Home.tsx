@@ -242,7 +242,7 @@ export function Home({ onSection }: HomeProps) {
       </section>
 
       <section className="section" id="work">
-        <p className="section-index reveal">02 // work</p>
+        <p className="section-index reveal">02 // projects</p>
         <ul className="project-list">
           {site.projects.map((project) => (
             <li className="project" key={project.title}>

@@ -8,7 +8,7 @@ import { markGlassReady } from "../lib/intro";
 
 const homeLinks = [
   { id: "about", label: "About" },
-  { id: "work", label: "Work" },
+  { id: "work", label: "Projects" },
   { id: "contact", label: "Contact" },
 ] as const;
 
@@ -96,6 +96,11 @@ export function Nav({ activeSection }: NavProps) {
 
     const refresh = () => glassRef.current?.markChanged();
     window.addEventListener("scroll", refresh, { passive: true });
+    // Images that finish loading after the snapshot (load events do not bubble, so capture).
+    const onImageLoad = (event: Event) => {
+      if (event.target instanceof HTMLImageElement) glassRef.current?.markChanged();
+    };
+    document.addEventListener("load", onImageLoad, true);
     window.addEventListener("resize", onResize);
     // A theme switch restarts the glass: same show, capture, hide pass as boot.
     const themeObserver = new MutationObserver(onResize);
@@ -117,6 +122,7 @@ export function Nav({ activeSection }: NavProps) {
       window.clearTimeout(resizeTimer);
       document.documentElement.classList.remove(CAPTURE_CLASS);
       window.removeEventListener("scroll", refresh);
+      document.removeEventListener("load", onImageLoad, true);
       window.removeEventListener("resize", onResize);
       themeObserver.disconnect();
       overlayObserver.disconnect();

@@ -1208,3 +1208,108 @@ a.project-link:hover {
 .is-glass-capture *::after {
   transition: none !important;
 }
+
+/* Ruler scrollbar (wide screens only; narrower ones keep the native bar). */
+.ruler {
+  display: none;
+}
+
+@media (min-width: 1100px) and (pointer: fine) {
+  html {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    display: none;
+  }
+
+  .to-top {
+    right: calc(4rem + 1.25rem);
+  }
+
+  .ruler {
+    position: fixed;
+    inset: 0 0 0 auto;
+    z-index: 40;
+    display: block;
+    width: 4rem;
+    overflow: hidden;
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    color: color-mix(in srgb, var(--ink) 38%, transparent);
+  }
+
+  .ruler-track {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100%;
+    will-change: transform;
+  }
+
+  .ruler-track::before,
+  .ruler-track::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  .ruler-track::before {
+    width: 0.3rem;
+    background: repeating-linear-gradient(to bottom, currentColor 0 1px, transparent 1px var(--step));
+  }
+
+  .ruler-track::after {
+    width: 0.55rem;
+    background: repeating-linear-gradient(to bottom, currentColor 0 1px, transparent 1px calc(var(--step) * 5));
+  }
+
+  .ruler-label {
+    position: absolute;
+    right: 0.85rem;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+  }
+
+  .ruler-section {
+    position: absolute;
+    top: 50%;
+    right: 2.5rem;
+    transform: translateY(-50%) rotate(180deg);
+    writing-mode: vertical-rl;
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--ink) 30%, transparent);
+    white-space: nowrap;
+  }
+
+  .ruler-marker {
+    position: absolute;
+    top: 0;
+    will-change: transform;
+    right: 0;
+    left: 0;
+    height: 1px;
+    background: var(--aqua-deep);
+    pointer-events: none;
+  }
+
+  .ruler-marker span {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    color: var(--aqua-deep);
+    white-space: nowrap;
+  }
+}

@@ -2,8 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useLocation, type Location } from "react-router-dom";
 import { gsap, ScrollTrigger } from "../lib/gsap";
-
-const scrollKeys = new Set([" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"]);
+import { lockScroll } from "../lib/scrollLock";
 
 function labelFor(pathname: string) {
   return pathname.startsWith("/gallery") ? "Photos" : "Home";
@@ -24,6 +23,26 @@ function parkOverlay(overlay: HTMLDivElement) {
 }
 
 const SLIDE = 0.43;
+/** Hold the cover at least this long after the swap, and never longer than the cap. */
+const SETTLE_MS = 200;
+/** The photo page is light, so going there settles sooner and slides faster. */
+const GALLERY_SETTLE_MS = 60;
+const GALLERY_SPEED = 0.75;
+const READY_CAP_MS = 3500;
+
+const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+/** Resolves once the new page's images and fonts are ready and it has painted. */
+function pageReady(shell: HTMLElement | null, settle: number) {
+  const images = shell ? [...shell.querySelectorAll("img")] : [];
+  const loads = images.map((img) => (img.complete ? Promise.resolve() : img.decode().catch(() => {})));
+  const ready = Promise.all([...loads, document.fonts?.ready]).then(async () => {
+    await frame();
+    await frame();
+    await new Promise((resolve) => setTimeout(resolve, settle));
+  });
+  return Promise.race([ready, new Promise((resolve) => setTimeout(resolve, READY_CAP_MS))]);
+}
 
 function slideDuration(from: number, to: number) {
   return Math.max(0.22, (Math.abs(to - from) / 100) * SLIDE);
@@ -32,6 +51,7 @@ function slideDuration(from: number, to: number) {
 export function PageTransition({ children }: { children: (location: Location) => ReactNode }) {
   const location = useLocation();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(location);
   const [label, setLabel] = useState(() => labelFor(location.pathname));
   const shownPath = useRef(location.pathname);
@@ -44,18 +64,10 @@ export function PageTransition({ children }: { children: (location: Location) =>
     if (!overlay) return;
     const next = locationRef.current;
 
-    const lockScroll = () => {
-      const blockWheel = (event: Event) => event.preventDefault();
-      const blockKeys = (event: KeyboardEvent) => {
-        if (scrollKeys.has(event.key)) event.preventDefault();
-      };
-      window.addEventListener("wheel", blockWheel, { passive: false });
-      window.addEventListener("touchmove", blockWheel, { passive: false });
-      window.addEventListener("keydown", blockKeys);
+    const lock = () => {
+      const unlock = lockScroll();
       unlockRef.current = () => {
-        window.removeEventListener("wheel", blockWheel);
-        window.removeEventListener("touchmove", blockWheel);
-        window.removeEventListener("keydown", blockKeys);
+        unlock();
         unlockRef.current = null;
       };
     };
@@ -106,15 +118,16 @@ export function PageTransition({ children }: { children: (location: Location) =>
     const parked = !overlay.classList.contains("is-on") || Math.abs(Math.abs(x) - 100) < 2;
     if (parked) gsap.set(overlay, { xPercent: enterFrom });
     overlay.classList.add("is-on");
-    if (!unlockRef.current) lockScroll();
+    if (!unlockRef.current) lock();
 
     const from = xPercentOf(overlay);
+    let cancelled = false;
     const timeline = gsap.timeline({ overwrite: true });
 
     if (Math.abs(from) >= 1) {
       timeline.to(overlay, {
         xPercent: 0,
-        duration: slideDuration(from, 0),
+        duration: slideDuration(from, 0) * (toGallery ? GALLERY_SPEED : 1),
         ease: "power3.inOut",
       });
     }
@@ -127,10 +140,20 @@ export function PageTransition({ children }: { children: (location: Location) =>
       if (!next.hash) window.scrollTo(0, 0);
       ScrollTrigger.refresh();
     });
-    timeline.to(overlay, { xPercent: leaveTo, duration: SLIDE, ease: "power3.inOut" }, "+=0.04");
+    // Keep the page covered until everything on it has loaded.
+    timeline.add(() => {
+      timeline.pause();
+      void pageReady(shellRef.current, toGallery ? GALLERY_SETTLE_MS : SETTLE_MS).then(() => {
+        if (cancelled) return;
+        ScrollTrigger.refresh();
+        timeline.play();
+      });
+    });
+    timeline.to(overlay, { xPercent: leaveTo, duration: SLIDE * (toGallery ? GALLERY_SPEED : 1), ease: "power3.inOut" });
     timeline.add(release);
 
     return () => {
+      cancelled = true;
       timeline.kill();
     };
   }, [location.pathname]);
@@ -143,7 +166,7 @@ export function PageTransition({ children }: { children: (location: Location) =>
           <span className="page-overlay-label">{label}</span>
         </div>
       </div>
-      <div className="page-shell">{children(shown)}</div>
+      <div className="page-shell" ref={shellRef}>{children(shown)}</div>
     </>
   );
 }

@@ -33,7 +33,7 @@ export function TiltImage({ src, alt, width, height, className = "tilt", imgClas
 
   return (
     <div className={className} ref={frame} onPointerMove={onMove} onPointerLeave={onLeave}>
-      <img className={imgClassName} src={src} alt={alt} width={width} height={height} loading="lazy" />
+      <img className={imgClassName} src={src} alt={alt} width={width} height={height} decoding="async" />
     </div>
   );
 }
